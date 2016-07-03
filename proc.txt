@@ -1,0 +1,24 @@
+
+routine for any day::
+
+create or replace procedure day_routine(day1 varchar(5))
+as
+Tid1 number(5),
+Stime1 varchar(5),
+Etime1 varchar(5); 
+Name1 varchar(10);
+cursor day_cur(dy varchar(5)) as
+Select Tid as slot, Name as Class, Stime as From, Etime as To 
+from 
+(Select Cid, Tid, Name from takes_attend_of a, courses b where a.Cid= b.Cid)x,
+timeslot y
+where x.Tid=y.Tid and y.day=dy;
+BEGIN
+OPEN day_cur(day1);
+LOOP
+FETCH day_cur INTO Tid1,Stime1,Etime1,Name1;
+EXIT WHEN day_cur%NOTFOUND;
+DBMS_OUTPUT.PUT_LINE(Tid1 || ' ' || Stime1 || '' || Etime1 || '' || Name1);
+END LOOP;
+CLOSE day_cur;
+END;

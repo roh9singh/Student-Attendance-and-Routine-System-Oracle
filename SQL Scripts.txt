@@ -1,0 +1,787 @@
+ select tablespace_name, table_name from user_tables;
+
+------------------------------Create----------------------------
+create table instructor(
+ Iid varchar2(5) constraint inst_pk Primary Key,
+ name Varchar(10) not null);
+
+create table class(
+ Clid varchar2(6) constraint class_pk Primary Key,
+ section Varchar2(1) constraint cls_nn1 not null,
+ year Number(1) Constraint year_cond_n check(year<5),check(year>0),
+ dept Varchar2(3) constraint cls_nn2 not null);
+
+create table timeslot(
+ Tid NUMBER(5),
+ Day Varchar(5),
+ Stime Varchar(5),
+ Etime Varchar(5),
+ Iid varchar2(5) Constraint time_fk References instructor(Iid),
+ primary key(Tid,Iid));
+
+
+create table courses(
+ cid  varchar2(10) constraint course_pk Primary Key,
+ name Varchar(20),
+ credits Number(1) Constraint credit_cond check(credits<5),check (credits>0));
+ 
+create table students(
+ Sid varchar2(5) constraint stud_pk Primary Key,
+ name Varchar2(10),
+ section Varchar2(1),
+ year Number(1) Constraint year_cond check(year<5),check(year>0),
+ dept Varchar2(3));
+
+
+create table teaches(
+ Iid varchar2(5) Constraint tech1_fk References instructor(Iid),
+ Tid Number(5),
+ Cid varchar2(10) Constraint tech4_fk References Courses(Cid),
+ Clid varchar2(5) Constraint tech3_fk1 References class(Clid),
+ Sid varchar2(5) Constraint tech5_fk1 References students(Sid),
+ primary key(Iid,Tid,Cid,Clid,Sid));
+
+create table takes(
+  Sid varchar2(5) Constraint tak1_fk References students(Sid),
+  Cid varchar2(10) Constraint tak2_fk References Courses(Cid),
+  primary key(Sid,Cid));
+
+create table takes_attend_of(
+ Iid varchar2(5) Constraint att1_fk References instructor(Iid),
+ Tid Number(5),
+ Sid Varchar2(5) Constraint att3_fk References students(Sid),
+ Cid Varchar2(10) Constraint att4_fk References Courses(Cid),
+ Attend Number(5),
+ primary key(Iid,Sid,Cid));
+
+
+
+-----------------------------Sequences------------------------
+
+create sequence inst_iid_seq
+increment by 1
+start with 1
+minvalue 0;
+
+create sequence stud_sid_seq
+increment by 1
+start with 1
+minvalue 0;
+
+create sequence time_tid_seq
+increment by 1
+start with 1
+minvalue 0;
+
+
+-----------------------------Insertion--------------------------
+
+ set serveroutput on;
+
+ 
+
+
+//Insert Instructor info
+
+Create or replace Procedure add_instructor (iname in varchar2) is
+Begin
+ insert into instructor (iid,name)
+ values(lpad(inst_iid_seq.nextval,3,'00'),iname);
+ DBMS_OUTPUT.PUT_LINE('Row Inserted');
+End;
+/ 
+
+begin
+  add_instructor('hns');
+ end;
+ /
+
+begin
+  add_instructor('skg');
+ end;
+ /
+
+begin
+  add_instructor('sch');
+ end;
+ /
+
+begin
+  add_instructor('ndr');
+ end;
+ /
+
+begin
+  add_instructor('sg');
+ end;
+ /
+
+
+begin
+  add_instructor('ssg');
+ end;
+ /
+
+begin
+  add_instructor('tc');
+ end;
+ /
+
+begin
+  add_instructor('ss');
+ end;
+ /
+
+select * from instructor;
+
+//Insert class 
+
+Create or replace Procedure add_class (sec Varchar2,yr varchar2,dt Varchar2) is
+Begin
+ insert into class (clid,section,year,dept)
+ values(concat(concat(substr(dt,1,2),yr),sec),sec,yr,dt);
+ DBMS_OUTPUT.PUT_LINE('Row Inserted');
+End;
+/ 
+
+
+
+begin
+  add_class('A',4,'CSE');
+ end;
+ /
+
+begin
+  add_class('B',4,'CSE');
+ end;
+ /
+
+begin
+  add_class('A',3,'CSE');
+ end;
+ /
+
+begin
+  add_class('B',3,'CSE');
+ end;
+ /
+
+begin
+  add_class('A',2,'CSE');
+ end;
+ /
+
+begin
+  add_class('B',2,'CSE');
+ end;
+ /
+
+select * from class;
+
+//Insert Students 
+
+Create or replace Procedure add_student (sname varchar2,Sec Varchar2,yr Number,dt Varchar2) is
+Begin
+ insert into students (sid,name,section,year,dept)
+ values(lpad(stud_sid_seq.nextval,3,substr(dt,1,2)),sname,sec,yr,dt);
+ DBMS_OUTPUT.PUT_LINE('Row Inserted');
+End;
+/ 
+
+begin
+  add_student('rohit','A',2,'CSE');
+ end;
+ /
+
+begin
+  add_student('pitabdhi','B',2,'CSE');
+ end;
+ /
+
+begin
+  add_student('padmanav','A',3,'CSE');
+ end;
+ /
+
+begin
+  add_student('nivanjan','B',3,'CSE');
+ end;
+ /
+
+
+begin
+  add_student('roshni','A',2,'CSE');
+ end;
+ /
+
+
+select * from students;
+
+
+//Insert courses
+
+Create or replace Procedure add_course(id varchar2,cname varchar2,cr Number) is
+Begin
+ insert into courses (cid,name,credits)
+ values(id,cname,cr);
+ DBMS_OUTPUT.PUT_LINE('Row Inserted');
+End;
+/ 
+
+begin
+  add_course('cs301','os',3);
+ end;
+ /
+
+
+begin
+  add_course('cs302','dbms',3);
+ end;
+ /
+
+begin
+  add_course('cs303','network',4);
+ end;
+ /
+
+begin
+  add_course('cs201','automata',3);
+ end;
+ /
+
+
+begin
+  add_course('cs202','maths',4);
+ end;
+ /
+
+begin
+  add_course('cs203','ds',4);
+ end;
+ /
+
+begin
+  add_course('cs304','mm',3);
+ end;
+ /
+
+select * from courses;
+
+
+
+//insert timeslot 
+
+Create or replace Procedure add_tslot(id varchar2,day varchar2,s varchar2,e varchar2) is
+Begin
+ insert into timeslot (tid,day,stime,etime,iid)
+ values(concat(decode(day,'tue',1,'wed',2,'thu',3,'fri',4,'sat',5),
+   decode(s,'09:20',1,'10:10',2,'11:00',3,'11:50',4)),day,s,e,id);
+ DBMS_OUTPUT.PUT_LINE('Row Inserted');
+End;
+/ 
+
+
+//////for tuesday
+begin
+  add_tslot('002','tue','09:20','10:10');
+ end;
+ /
+
+
+begin
+  add_tslot('004','tue','09:20','10:10');
+ end;
+ /
+
+begin
+  add_tslot('008','tue','10:10','11:00');
+ end;
+ /
+
+
+begin
+  add_tslot('004','tue','10:10','11:00');
+ end;
+ /
+
+begin
+  add_tslot('002','tue','11:00','11:50');
+ end;
+ /
+
+
+begin
+  add_tslot('009','tue','11:00','11:50');
+ end;
+ /
+
+
+//////for wednesday
+begin
+  add_tslot('005','wed','09:20','10:10');
+ end;
+ /
+
+
+begin
+  add_tslot('002','wed','09:20','10:10');
+ end;
+ /
+
+begin
+  add_tslot('002','wed','10:10','11:00');
+ end;
+ /
+
+
+begin
+  add_tslot('006','wed','10:10','11:00');
+ end;
+ /
+
+begin
+  add_tslot('005','wed','11:00','11:50');
+ end;
+ /
+
+
+begin
+  add_tslot('003','wed','11:00','11:50');
+ end;
+ /
+
+//////for thursday
+begin
+  add_tslot('007','thu','09:20','10:10');
+ end;
+ /
+
+
+begin
+  add_tslot('006','thu','09:20','10:10');
+ end;
+ /
+
+begin
+  add_tslot('009','thu','10:10','11:00');
+ end;
+ /
+
+
+begin
+  add_tslot('007','thu','10:10','11:00');
+ end;
+ /
+
+begin
+  add_tslot('005','thu','11:00','11:50');
+ end;
+ /
+
+
+begin
+  add_tslot('006','thu','11:00','11:50');
+ end;
+ /
+
+select * from timeslot;
+
+//insert Teaches(routine) 
+
+Create or replace Procedure add_routine(a varchar2,b number,c varchar2,d varchar2,e varchar2) is
+Begin
+ insert into teaches (iid,tid,clid,sid,cid)
+ values(a,b,c,d,e);
+ DBMS_OUTPUT.PUT_LINE('Row Inserted');
+End;
+/ 
+
+////////////////////////////////////combine//////////////////////////////
+/////////////////11/////////////
+begin
+  add_routine('002',11,'CS2A','CS2','cs201');
+ end;
+ /
+
+begin
+  add_routine('004',11,'CS3A','CS4','cs304');
+ end;
+ /
+
+
+begin
+  add_routine('004',11,'CS3A','CS6','cs304');
+ end;
+ /
+
+/////////////////12/////////////
+begin
+  add_routine('008',12,'CS2A','CS2','cs202');
+ end;
+ /
+
+begin
+  add_routine('004',12,'CS3A','CS4','cs304');
+ end;
+ /
+
+
+begin
+  add_routine('004',12,'CS3A','CS6','cs304');
+ end;
+ /
+
+/////////////////13/////////////
+begin
+  add_routine('002',13,'CS2A','CS2','cs203');
+ end;
+ /
+
+begin
+  add_routine('009',13,'CS3A','CS4','cs301');
+ end;
+ /
+
+
+begin
+  add_routine('009',13,'CS3A','CS6','cs301');
+ end;
+ /
+
+
+//////////////////////////////wed
+/////////////////21/////////////
+begin
+  add_routine('005',21,'CS2A','CS2','cs203');
+ end;
+ /
+
+begin
+  add_routine('002',21,'CS3A','CS4','cs303');
+ end;
+ /
+
+
+begin
+  add_routine('002',21,'CS3A','CS6','cs303');
+ end;
+ /
+
+/////////////////22/////////////
+begin
+  add_routine('002',22,'CS2A','CS2','cs201');
+ end;
+ /
+
+begin
+  add_routine('006',22,'CS3A','CS4','cs302');
+ end;
+ /
+
+
+begin
+  add_routine('006',22,'CS3A','CS6','cs302');
+ end;
+ /
+
+/////////////////23/////////////
+begin
+  add_routine('005',23,'CS2A','CS2','cs202');
+ end;
+ /
+
+begin
+  add_routine('003',23,'CS3A','CS4','cs303');
+ end;
+ /
+
+
+begin
+  add_routine('003',23,'CS3A','CS6','cs303');
+ end;
+ /
+
+
+//////////////////////////////thu
+/////////////////31/////////////
+begin
+  add_routine('007',31,'CS2A','CS2','cs304');
+ end;
+ /
+
+begin
+  add_routine('006',31,'CS3A','CS4','cs302');
+ end;
+ /
+
+
+begin
+  add_routine('006',31,'CS3A','CS6','cs302');
+ end;
+ /
+
+/////////////////32/////////////
+begin
+  add_routine('009',32,'CS2A','CS2','cs202');
+ end;
+ /
+
+begin
+  add_routine('007',32,'CS3A','CS4','cs304');
+ end;
+ /
+
+
+begin
+  add_routine('007',32,'CS3A','CS6','cs304');
+ end;
+ /
+
+/////////////////33/////////////
+begin
+  add_routine('005',33,'CS2A','CS2','cs203');
+ end;
+ /
+
+begin
+  add_routine('006',23,'CS3A','CS4','cs301');
+ end;
+ /
+
+
+begin
+  add_routine('006',23,'CS3A','CS6','cs301');
+ end;
+ /
+
+
+
+select * from teaches;
+
+
+//insert Takes 
+
+Create or replace Procedure add_takes(s varchar2,c varchar2) is
+Begin
+ insert into takes (sid,cid)
+ values(s,c);
+ DBMS_OUTPUT.PUT_LINE('Row Inserted');
+End;
+/ 
+
+begin
+  add_takes('CS4','cs301');
+ end;
+ /
+
+select * from takes;
+
+
+//insert takes_attend_of 
+
+------------------------------Procedures for combinstions(Day,Teacher,Subject)-----------
+
+create or replace procedure displayall
+as
+	tid1 timeslot.tid%type;	
+	stime1 varchar(5);	 
+	clid1 varchar(5);	
+	iname varchar(5);	 
+	cname courses.name%type;	
+	dy varchar(5);	 
+
+cursor day_cur2 is
+     select distinct e.clid ,e.tid,e.stime,e.day,i.name,e.name 
+     from (select * from (select  * from teaches natural join courses) natural join timeslot) e 
+     join instructor i using (iid) order by tid;
+BEGIN
+DBMS_OUTPUT.PUT_LINE('Period'||chr(9)||'Time'||chr(9)||'Day'||chr(9)||'Teacher'||chr(9)||'Class'||chr(9)||'Subject');
+OPEN day_cur2;
+LOOP
+FETCH day_cur2 INTO clid1,tid1,stime1,dy,iname,cname;
+EXIT WHEN day_cur2%NOTFOUND;
+DBMS_OUTPUT.PUT_LINE(tid1||chr(9)||stime1||chr(9)||dy||chr(9)||iname||chr(9)||clid1||chr(9)||cname||chr(9));
+END LOOP;
+CLOSE day_cur2;
+END;
+/
+
+begin
+displayall;
+end;
+/
+
+
+//display routine for whole week for a class
+
+create or replace procedure routine(cl varchar2)
+as
+	iname instructor.name%type;
+        tid1 number(5);
+        cuid varchar2(5);
+        cname varchar2(10);	
+	Stime1 varchar(5);	
+	Etime1 varchar(5); 
+	clid1 class.clid%type;
+	dy timeslot.day%type;
+cursor wek_rou(cl varchar2) is
+      Select distinct e.clid,e.tid,e.Stime,e.Etime,i.name,e.cid,e.name,e.day
+      from (select * from (select * from timeslot natural join teaches)
+      natural join courses) e join instructor i using (iid) where clid=cl order by tid;
+BEGIN
+DBMS_OUTPUT.PUT_LINE('The Routine for the week for class:'|| cl);
+DBMS_OUTPUT.PUT_LINE('Period'||chr(9)||'Time'||chr(9)||'Day'||chr(9)||'Teacher'||chr(9)||'Class'||chr(9)||'Subject');
+OPEN wek_rou(cl);
+LOOP
+FETCH wek_rou INTO clid1,tid1,Stime1,Etime1,iname,cuid,cname,dy;
+EXIT WHEN wek_rou%NOTFOUND;
+DBMS_OUTPUT.PUT_LINE(Tid1 ||chr(9)|| Stime1 ||chr(9)|| dy ||chr(9)|| iname ||chr(9)|| cuid ||chr(9)|| cname);
+END LOOP;
+CLOSE wek_rou;
+END;
+/
+
+begin
+routine('CS3A');
+end;
+/
+
+
+begin
+routine('CS2A');
+end;
+/
+
+//display routine for a particular day for a class
+
+create or replace procedure day_routine(day1 varchar2,cl varchar2)
+as
+	iname varchar(5);
+        tid1 varchar(5);	
+	cuid varchar2(5);
+        cname courses.name%type;
+	Stime1 varchar(5);	
+	Etime1 varchar(5);
+	clid1 class.clid%type;
+cursor day_cur(dy varchar2,cl varchar2) is
+      Select distinct e.clid,e.tid,e.Stime,e.Etime,i.name,e.cid,e.name
+      from (select * from (select * from timeslot natural join teaches)
+      natural join courses) e join instructor i using (iid) where clid=cl and day=dy order by tid;
+BEGIN
+DBMS_OUTPUT.PUT_LINE('The Routine for the week for class:'|| cl ||' on '||day1);
+DBMS_OUTPUT.PUT_LINE('Period'||chr(9)||'STime'||chr(9)||'ETime'||chr(9)||'Teacher'||chr(9)||'Cid'||chr(9)||'Subject');
+OPEN day_cur(day1,cl);
+LOOP
+FETCH day_cur INTO clid1,tid1,Stime1,Etime1,iname,cuid,cname;
+EXIT WHEN day_cur%NOTFOUND;
+DBMS_OUTPUT.PUT_LINE(Tid1 ||chr(9)|| Stime1 ||chr(9)|| Etime1 ||chr(9)|| iname||chr(9)||cuid||chr(9)||cname);
+END LOOP;
+CLOSE day_cur;
+END;
+/
+
+
+begin
+day_routine('tue','CS3A');
+end;
+/
+
+begin
+day_routine('wed','CS2A');
+end;
+/
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+					END
+////////////////////////////////////////////////////////////////////////////////
+
+//display routine for whole week for a class
+
+SQL> select distinct e.clid ,e.tid,i.name,e.name,e.day 
+     from (select * from (select  * from teaches natural join courses) natural join timeslot) e 
+     join instructor i using (iid) order by tid;
+
+create or replace procedure routine(cl varchar2)
+as
+	iname varchar2(5);
+        tid1 number(5);
+        cuid varchar2(5);	
+	Stime1 varchar(5);	
+	Etime1 varchar(5); 
+cursor wek_rou(cl varchar2) is
+      Select tid,Stime,Etime,name,cid
+      from (select * from (select * from timeslot natural join teaches) natural join instructor where clid=cl);
+BEGIN
+DBMS_OUTPUT.PUT_LINE('The Routine for the week for class:'|| cl);
+OPEN wek_rou(cl);
+LOOP
+FETCH wek_rou INTO tid1,Stime1,Etime1,iname,cuid;
+EXIT WHEN wek_rou%NOTFOUND;
+DBMS_OUTPUT.PUT_LINE(Tid1 || '    ' || Stime1 || '   ' || Etime1 || '   ' || iname || '  ' ||cuid);
+END LOOP;
+CLOSE wek_rou;
+END;
+/
+
+create or replace procedure display(day1 varchar2)
+as
+	iid1 number(5);
+        tid1 varchar(5);	
+	Stime1 varchar(5);	
+	Etime1 varchar(5); 
+cursor day_cur2(dy varchar2) is
+      Select tid,Stime,Etime,iid
+      from timeslot;
+BEGIN
+OPEN day_cur2(day1);
+LOOP
+FETCH day_cur2 INTO tid1,Stime1,Etime1,iid1;
+EXIT WHEN day_cur2%NOTFOUND;
+DBMS_OUTPUT.PUT_LINE(Tid1 || ' ' || Stime1 || '' || Etime1 || '' || iid1);
+END LOOP;
+CLOSE day_cur2;
+END;
+/
+
+declare
+ cursor emp_demo is
+ select * from instructor;
+ a instructor.iid%type;
+ b instructor.name%type;
+begin
+ open emp_demo;
+ fetch emp_demo into a,b;
+ dbms_output.put_line(a);
+end;
+/
+
+select * from (select * from timeslot natural join teachers) where clid='';
+
+select * from (select * from timeslot natural join teachers) where clid='' and day='';
+
+
+
+
+
+
+
+
+
+//display_day(day)	
+//display_teacher(Inst)
+//display_subject(day)
+//display_teacher_on_day(Inst,day)
+//display_teacher_with_subj(Inst,subj)
+//display_subjects_on_day(Inst,day)
+//display_teacher_with_subj_on_day(Inst,Subject,day)
+
+//Sec_display_day(day)	
+//Sec_display_teacher(Inst)
+//Sec_display_subject(day)
+//Sec_display_teacher_on_day(Inst,day)
+//Sec_display_teacher_with_subj(Inst,subj)
+//Sec_display_subjects_on_day(Inst,day)
+//Sec_display_teacher_with_subj_on_day(Inst,Subject,day)
